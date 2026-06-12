@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeekShop Observability + AIOps Stack Redesign — Trình bày</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1e293b;
+    --muted: #64748b;
+    --accent: #0ea5e9;
+    --accent-dim: #0284c7;
+    --warn: #f97316;
+    --ok: #22c55e;
+    --card: #f8fafc;
+    --border: #e2e8f0;
+    --card-border: #cbd5e1;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); margin: 0; overflow: hidden; }
+  .slide { position: absolute; inset: 0; display: flex; flex-direction: column; padding: clamp(1.5rem, 3vw, 3rem); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .slide.active { opacity: 1; pointer-events: auto; z-index: 10; }
+  .slide-header { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 700; margin-bottom: 0.75rem; color: var(--fg); }
+  .slide-subtitle { font-size: clamp(1rem, 2vw, 1.25rem); color: var(--muted); margin-bottom: 2rem; }
+  .slide-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.25rem; }
+  .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--accent); }
+  .card p { font-size: 0.875rem; line-height: 1.6; color: var(--muted); }
+  .card ul { line-height: 1.8; color: var(--muted); margin: 0.5rem 0 0 1.25rem; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: clamp(0.75rem, 1.2vw, 0.875rem); }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-weight: 600; }
+  td { color: var(--fg); }
+  .badge { display: inline-block; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-warn { background: #fff7ed; color: var(--warn); border: 1px solid #fed7aa; }
+  .badge-ok { background: #f0fdf4; color: var(--ok); border: 1px solid #bbf7d0; }
+  .badge-info { background: #eff6ff; color: var(--accent); border: 1px solid #bae6fd; }
+  .diagram-frame { width: 100%; aspect-ratio: 16/9; max-height: 60vh; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #f8fafc; }
+  .diagram-frame img { width: 100%; height: 100%; object-fit: contain; }
+  .nav { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.75rem; z-index: 100; }
+  .nav button { background: var(--card); border: 1px solid var(--card-border); color: var(--fg); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; }
+  .nav button:hover { background: var(--accent); border-color: var(--accent); color: white; }
+  .nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .slide-counter { position: fixed; bottom: 1.5rem; right: 1.5rem; color: var(--muted); font-size: 0.875rem; font-family: 'JetBrains Mono', monospace; z-index: 100; }
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 200; transition: width 0.3s; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+  @media (max-width: 1024px) {
+    .grid-2, .grid-3, .two-col { grid-template-columns: 1fr; }
+  }
+  code { font-family: 'JetBrains Mono', monospace; background: #eff6ff; padding: 0.125rem 0.375rem; border-radius: 4px; font-size: 0.85em; }
+  .arrows { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+  .arrow-btn { background: var(--card); border: 1px solid var(--card-border); color: var(--fg); width: 40px; height: 40px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+  .arrow-btn:hover { background: var(--accent); border-color: var(--accent); color: white; }
+  .step-badge { display: inline-block; background: #eff6ff; color: var(--accent); border: 1px solid #bae6fd; padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-right: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress" style="width: 5.6%;"></div>
+
+<!-- SLIDE 1: Title -->
+<section class="slide active" data-index="0">
+  <div class="slide-content" style="justify-content: center; align-items: center; text-align: center;">
+    <h1 class="slide-header" style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1rem;">GeekShop Observability + AIOps Stack Redesign</h1>
+    <p class="slide-subtitle" style="font-size: clamp(1.25rem, 2.5vw, 1.75rem); max-width: 800px;">Cắt 50% chi phí · Cắt 30% time-to-root-cause · Migration zero blackout</p>
+    <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem; color: var(--muted); font-size: 1.125rem;">
+      <span>👤 Nguyễn Hữu Định</span>
+      <span>🆔 XB-DN26-083</span>
+      <span>🎯 AIOps • Nhóm AIO-03 • Tuần 2</span>
+    </div>
+    <div class="arrows">
+      <button class="arrow-btn" onclick="nextSlide()">→</button>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 2: The Brief -->
+<section class="slide" data-index="1">
+  <header><h2 class="slide-header">Đề bài — Hai ràng buộc bắt buộc</h2><p class="slide-subtitle">Cả hai phải đạt đồng thời trong 6 tháng</p></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div class="card" style="border-color: #fed7aa;">
+        <h3>📉 Giảm chi phí ≥ 40%</h3>
+        <p>Chi phí hiện tại: <strong>$42,000/tháng</strong> (Datadog, Splunk, PagerDuty, Grafana Cloud).</p>
+        <p>Mục tiêu: <strong>≤ $25,200/tháng</strong> trong 6 tháng.</p>
+      </div>
+      <div class="card" style="border-color: #bbf7d0;">
+        <h3>⚡ Giảm time-to-root-cause ≥ 30%</h3>
+        <p>Time-to-root-cause trung vị hiện tại: <strong>25–40 phút</strong> (correlation thủ công qua 4 UI).</p>
+        <p>Mục tiêu: On-call tìm root cause trong <strong>≤ 28 phút</strong> qua single surface.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 1.5rem; border-color: #bae6fd;">
+      <h3>🎯 Những gì đội sẽ TU CHỐI</h3>
+      <ul style="line-height: 2; color: var(--muted);">
+        <li>Chỉ cắt chi phí mà bỏ capability ("tắt APM là xong")</li>
+        <li>Big-bang rebuild không có migration từng bước + rollback mỗi bước</li>
+        <li>Quyết định không chứng minh được cả 3: chi phí, capability gap, VÀ rủi ro</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3: Current State -->
+<section class="slide" data-index="2">
+  <header><h2 class="slide-header">Trạng thái hiện tại — $42K/Tháng</h2><p class="slide-subtitle">Vendor surfaces phân mảnh, context switching thủ công, không có unified signal flow</p></header>
+  <div class="slide-content">
+    <div class="two-col">
+      <div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Component</th><th>Chi phí/tháng</th><th>Unit Driver</th><th>Pain Point</th></tr></thead>
+            <tbody>
+              <tr><td>Datadog APM hosts</td><td>$11,800</td><td>$40/host/tháng</td><td>295 host equivalents</td></tr>
+              <tr><td>Datadog infra metrics</td><td>$5,400</td><td>$18/host/tháng</td><td>300 hosts</td></tr>
+              <tr><td>Datadog custom metrics overage</td><td>$2,200</td><td>active-series</td><td>~440K excess series</td></tr>
+              <tr><td>Datadog indexed logs</td><td>$1,800</td><td>indexed events</td><td>~1.05B events/tháng</td></tr>
+              <tr><td>Splunk Cloud log storage/search</td><td>$13,900</td><td>GB/ngày + workload</td><td>52 GB/ngày, 30d retention</td></tr>
+              <tr><td>PagerDuty Business</td><td>$3,900</td><td>$60/user/tháng</td><td>65 users</td></tr>
+              <tr><td>Grafana Cloud Pro</td><td>$1,050</td><td>active users</td><td>18 users</td></tr>
+              <tr><td>Khác (Synthetics, Tracing premium, Statuspage)</td><td>$2,000</td><td>—</td><td>—</td></tr>
+              <tr style="font-weight: 600; color: var(--accent);"><td>TỔNG</td><td>$42,000</td><td colspan="2"></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="diagram-frame">
+        <img src="current-observability-architecture.svg" alt="Kiến trúc hiện tại">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4: Pain Points & Incidents -->
+<section class="slide" data-index="3">
+  <header><h2 class="slide-header">Bằng chứng: Tại sao stack hiện tại fail</h2><p class="slide-subtitle">30 incident thật trong 6 tháng production GeekShop</p></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <h3>🔴 Top Pain Points (từ team)</h3>
+          <ol style="line-height: 2; color: var(--muted); font-size: 0.9375rem;">
+            <li>On-call mở 4 UI để correlate 1 incident</li>
+            <li>Chi phí log dẫn đầu nhưng 95% log chưa bao giờ query</li>
+            <li>Cardinality explosion từ <code>customer_id</code>, <code>request_id</code></li>
+            <li>PagerDuty page nhiễu → alert fatigue</li>
+            <li>Không có service graph → trace dependency thủ công</li>
+            <li>Splunk hot storage = $13.9K nhưng chỉ để audit search</li>
+            <li>Không tái dùng knowledge incident → RCA lặp lại</li>
+          </ol>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3>📊 Incident đại diện</h3>
+          <table>
+            <thead><tr><th>ID</th><th>Severity</th><th>Root Cause</th><th>MTTD</th><th>Time to root cause</th></tr></thead>
+            <tbody>
+              <tr><td>INC-2025-09-05</td><td class="badge badge-warn">Critical</td><td>payment-svc pool exhaustion</td><td>6 phút</td><td>18 phút</td></tr>
+              <tr><td>INC-2025-07-04</td><td class="badge badge-warn">Critical</td><td>payments-db lock contention</td><td>4 phút</td><td>22 phút</td></tr>
+              <tr><td>INC-2025-06-12</td><td class="badge badge-info">High</td><td>catalog-db slow query</td><td>12 phút</td><td>58 phút</td></tr>
+              <tr><td>INC-2026-06-02</td><td class="badge badge-ok">Low</td><td>recommender pipeline lag</td><td>90 phút</td><td>30 phút</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--muted);">Insight: <code>catalog-db</code> là contention hotspot cho 4 service; <code>payment-svc</code> là revenue-critical path.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: Target Architecture -->
+<section class="slide" data-index="4">
+  <header><h2 class="slide-header">Kiến trúc mục tiêu — $20,930/Tháng (giảm 50.2%)</h2><p class="slide-subtitle">OpenTelemetry-first · Tiered retention · Topology-aware correlation · Single query surface</p></header>
+  <div class="slide-content">
+    <div class="diagram-frame" style="max-height: 75vh;">
+      <img src="target-observability-aiops-architecture.svg" alt="Kiến trúc mục tiêu">
+    </div>
+    <div class="grid-3" style="margin-top: 1rem;">
+      <div class="card"><h3>📥 Ingest</h3><p>OTel Collector + Policy Processor (sampling, PII, cardinality)</p></div>
+      <div class="card"><h3>💾 Store</h3><p>VictoriaMetrics · Loki (hot ops) · ClickHouse (analytics) · Tempo · S3 cold archive</p></div>
+      <div class="card"><h3>🎯 Respond</h3><p>Grafana single surface · Alert correlation → grouped PD pages · Incident KB</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6: Component Decisions (A2) -->
+<section class="slide" data-index="5">
+  <header><h2 class="slide-header">A2 — Bảng quyết định Component</h2><p class="slide-subtitle">Mỗi capability: component được chọn, lý do, rủi ro đổi ý sau 6 tháng</p></header>
+  <div class="slide-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Capability</th><th>Chosen Component</th><th>Tại sao chọn</th><th>Rủi ro nếu đổi ý sau 6 tháng</th></tr></thead>
+        <tbody>
+          <tr><td>Metrics Ingest + Store + Query</td><td>VictoriaMetrics (Prometheus Agent remote-write)</td><td>OSS, nén 40%+ hơn Prometheus, scale 10M+ series, PromQL native</td><td>Query API lock-in; migrate = viết lại recording rules &amp; dashboards</td></tr>
+          <tr><td>Logs Ingest + Store + Search</td><td>Loki (hot ops 7d) + ClickHouse (analytics/audit) + S3 (cold 1yr)</td><td>Tiered cost: Loki label-based LogQL cho ops; ClickHouse SQL cho analytics/audit</td><td>Dual query dialect (LogQL + SQL); re-index cold data tốn kém nếu schema đổi</td></tr>
+          <tr><td>Distributed Tracing</td><td>Tempo (Grafana-native, OTel)</td><td>Không host-pricing; service graph built-in; native trace-to-metrics-to-logs trong Grafana</td><td>Sampling config drift; nếu sample quá aggressive sẽ mất low-throughput traces</td></tr>
+          <tr><td>Alerting + Correlation</td><td>Alertmanager + Robusta-style topology enrichment</td><td>Group theo service graph topology; auto-suppress upstream storm</td><td>Correlation rules chứa tribal knowledge; khó port sang engine khác</td></tr>
+          <tr><td>Incident Routing + Paging</td><td>PagerDuty (giữ lại)</td><td>Tránh rủi ro migrate paging; chỉ forward grouped pages</td><td>Vendor lock-in paging; nếu PD tăng giá, re-route không tầm thường</td></tr>
+          <tr><td>Dashboards + SLOs</td><td>Grafana (primary)</td><td>Single query surface cho metrics/logs/traces; SLO dashboards built-in</td><td>Dashboard JSON không portable; vendor-specific panel plugin tạo divergence</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7: Cost Model (A3) -->
+<section class="slide" data-index="6">
+  <header><h2 class="slide-header">A3 — Cost Model: $42K → $20.9K (giảm 50.2%)</h2><p class="slide-subtitle">Credible với public vendor pricing; 12% reserve; dư $4.3K so với ngưỡng 40%</p></header>
+  <div class="slide-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Line Item</th><th>Current</th><th>Target</th><th>Unit Driver</th><th>Assumption / Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>Datadog APM hosts</td><td>$11,800</td><td>$0</td><td>$42/host/tháng (list)</td><td>Thay bằng OTel + Tempo; list price: datadoghq.com/pricing (APM-HOST-PRO on-demand $42)</td></tr>
+          <tr><td>Datadog infra metrics</td><td>$5,400</td><td>$0</td><td>$18/host/tháng (list)</td><td>Prometheus/VM; list price: datadoghq.com/pricing (HOSTS-PRO on-demand $18)</td></tr>
+          <tr><td>Datadog custom metrics overage</td><td>$2,200</td><td>$300</td><td>active-series overage</td><td>Cardinality budget + giảm 85% qua policy processor</td></tr>
+          <tr><td>Datadog indexed logs</td><td>$1,800</td><td>$0</td><td>indexed events/tháng</td><td>Route qua OTel → tiered log store</td></tr>
+          <tr><td>Splunk Cloud log storage</td><td>$13,900</td><td>$0 (→ OSS backend)</td><td>GB/ngày indexed</td><td>52→7 GB/ngày hot; log cost included in OSS backend below</td></tr>
+          <tr><td>PagerDuty Business</td><td>$3,900</td><td>$2,700</td><td>$49–60/user/tháng</td><td>65→45 seats; list price: pagerduty.com/pricing (Business $41–49/user/tháng)</td></tr>
+          <tr><td>Grafana Cloud Pro</td><td>$1,050</td><td>$2,500</td><td>$8–55/active user/tháng</td><td>Primary query surface; list price: grafana.com/pricing ($8 base, $55 Enterprise plugins)</td></tr>
+          <tr><td>Statuspage + Synthetics + Khác</td><td>$1,650</td><td>$940</td><td>—</td><td>Giữ critical checks; low-value chuyển sang OSS</td></tr>
+          <tr><td>OSS backend compute/storage (MỚI)</td><td>$0</td><td>$7,500</td><td>VM, disks, S3, ops</td><td>~$3K log tier (Loki+ClickHouse+S3), ~$2.5K metrics (VictoriaMetrics), ~$1.2K tracing (Tempo), ~$0.8K incident index (OpenSearch)</td></tr>
+          <tr><td>Operational reserve (12%)</td><td>$0</td><td>$2,490</td><td>contingency</td><td>Dual-run, volume spikes, migration overhead</td></tr>
+          <tr style="font-weight: 600; color: var(--accent);"><td>TỔNG</td><td>$42,000</td><td>$20,930</td><td colspan="3">Giảm 50.2% · Target ≤ $25,200 threshold</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top: 1rem; border-color: #bbf7d0;">
+      <h3>Sensitivity: Nếu volume dữ liệu tăng 2× nhanh hơn dự kiến</h3>
+      <p style="color: var(--muted);">Hot log tier cost + query latency break đầu. Mitigation: enforce structured logging allowlist, giảm hot retention 7d→3d cho low-criticality, giữ cold S3 audit archive, require cardinality budgets trong CI.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8: ADR 001 -->
+<section class="slide" data-index="7">
+  <header><h2 class="slide-header">A4 — ADR 001: Tiered Log Storage (Thay Splunk Hot)</h2><p class="slide-subtitle">Cost lever #1: $13.9K → $4.5K bằng cách tách hot search vs cold audit</p></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div class="card"><h3>Context (Ngữ cảnh)</h3><p style="color: var(--muted);">Splunk Cloud hot storage + search = $13.9K/tháng (52 GB/ngày, 30d retention). 95% log không query sau 7 ngày. Yêu cầu audit driving 1yr retention nhưng không cần hot search.</p></div>
+      <div class="card"><h3>Decision (Quyết định)</h3><p style="color: var(--muted);">Thay Splunk hot bằng Loki (7d structured hot) + ClickHouse (analytics) + S3 cold archive (1yr). OTel Collector route: structured → Loki/ClickHouse; raw → S3.</p></div>
+      <div class="card"><h3>Alternatives Rejected (Đã loại)</h3><p style="color: var(--muted);"><strong>Giữ Splunk, đàm phán discount:</strong> không giải quyết structural cost; lock-in vẫn còn.<br><strong>Elastic Cloud:</strong> pricing model tương tự, kém linh hoạt tiering hơn, ops overhead cao hơn.</p></div>
+      <div class="card"><h3>Consequences (Hậu quả)</h3><p style="color: var(--muted);">✅ Tiết kiệm $9.4K/tháng (~68% trên logs).<br>✅ Audit export vẫn có qua S3.<br>⚠️ Dual query dialect: LogQL (Loki) vs SQL (ClickHouse).<br>⚠️ Schema change cần re-index cold data.<br>⚠️ Ops burden: self-host Loki/ClickHouse clusters.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 9: ADR 002 -->
+<section class="slide" data-index="8">
+  <header><h2 class="slide-header">A4 — ADR 002: OpenTelemetry-First Correlation + Giữ PagerDuty</h2><p class="slide-subtitle">Adopt OTel làm universal ingestion; giữ PD chỉ cho grouped pages</p></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div class="card"><h3>Context (Ngữ cảnh)</h3><p style="color: var(--muted);">3 vendor agent (DD agent, Splunk UF, Grafana agent) tạo fragmentation. Correlation xảy ra trong đầu người. PD nhận raw alert → noise. Cần unified pipeline + topology-aware grouping.</p></div>
+      <div class="card"><h3>Decision (Quyết định)</h3><p style="color: var(--muted);">Single OTel Collector fleet + Policy Processor (sampling, PII, cardinality). Alertmanager group theo service graph topology. Chỉ <strong>grouped, severity-aware</strong> pages → PagerDuty. PD giữ làm paging surface.</p></div>
+      <div class="card"><h3>Alternatives Rejected (Đã loại)</h3><p style="color: var(--muted);"><strong>Thay PD bằng OSS (Alertmanager + ntfy):</strong> rủi ro migrate on-call quá cao; pager reliability non-negotiable.<br><strong>Giữ DD/Splunk alerting:</strong> không có topology awareness; alert storm vẫn tiếp diễn.</p></div>
+      <div class="card"><h3>Consequences (Hậu quả)</h3><p style="color: var(--muted);">✅ Single ingestion pipeline → cost, consistency, governance.<br>✅ Correlation cắt page volume ~70% (estimate từ incident history).<br>✅ Không rủi ro migrate paging.<br>⚠️ OTel Collector fleet là infra critical mới (cần HA, upgrade).<br>⚠️ PD vẫn vendor lock-in cho paging.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10: Migration Plan (A5) -->
+<section class="slide" data-index="9">
+  <header><h2 class="slide-header">A5 — Kế hoạch Migration 8 Tuần</h2><p class="slide-subtitle">Mỗi cut-over có rollback, không blackout, go/no-go gate rõ ràng</p></header>
+  <div class="slide-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tuần</th><th>Focus</th><th>Cut-over</th><th>Rollback (≤30 phút)</th><th>Go/No-Go Gate</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Foundation</td><td>Deploy OTel Collector fleet (shadow), Policy Processor, VictoriaMetrics, Loki, Tempo</td><td>Tắt OTel pipeline; old agents unchanged</td><td>OTel ingest 100% signals shadow; latency p50 < 50ms</td></tr>
+          <tr><td>2</td><td>Metrics</td><td>Chuyển metrics query sang Grafana + VictoriaMetrics; DD metrics read-only</td><td>Flip Grafana datasource về DD</td><td>95% dashboard query match DD ±5%; p99 < 2s</td></tr>
+          <tr><td>3</td><td>Logs — Hot</td><td>Route structured logs → Loki/ClickHouse; giữ Splunk UF cho raw</td><td>Bật lại Splunk UF; tắt Loki ingest</td><td>Log query parity top 20 investigations; p99 < 3s</td></tr>
+          <tr><td>4</td><td>Logs — Cold</td><td>Bật S3 cold archive; dừng Splunk hot indexing cho audit-only logs</td><td>Bật lại Splunk indexing</td><td>S3 audit export verified; Cold retrieval < 5 phút</td></tr>
+          <tr><td>5</td><td>Tracing</td><td>Bật OTel tracing → Tempo; deprecate DD APM agent</td><td>Bật lại DD APM agent</td><td>Service graph complete critical paths; trace sampling 10%+</td></tr>
+          <tr><td>6</td><td>Alerting + Correlation</td><td>Kích hoạt Alertmanager + topology correlation; shadow PagerDuty</td><td>Tắt correlation; raw alerts → PD</td><td>Synthetic incident triaged by on-call chỉ dùng correlation; 0 missed pages</td></tr>
+          <tr><td>7</td><td>PagerDuty Cut-over</td><td>Route grouped pages only → PD; giảm seats 65→45</td><td>Revert raw alerts, all seats</td><td>Page volume ↓ 70%; on-call ACK < 2 phút; no severity regression</td></tr>
+          <tr><td>8</td><td>Cleanup &amp; Harden</td><td>Decommission DD agent, Splunk UF, DD APM; finalize Grafana single surface</td><td>Re-deploy old agents từ backup config</td><td>Zero DD/Splunk bill; all dashboards migrated; runbook updated</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top: 1rem; border-color: #bbf7d0;">
+      <h3>Nguyên tắc No-Observability-Blackout</h3>
+      <ul style="line-height: 1.8; color: var(--muted); columns: 2; -webkit-columns: 2;">
+        <li>Shadow pipeline trước mọi thay đổi authority</li>
+        <li>Old tools ở read-only/fallback ≥30 ngày post-cutover</li>
+        <li>Named rollback owner mỗi tuần</li>
+        <li>Cut-over giờ hành chính chỉ sau synthetic validation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11: Risk Register (A6) -->
+<section class="slide" data-index="10">
+  <header><h2 class="slide-header">A6 — Risk Register (Top 6)</h2><p class="slide-subtitle">Mitigation cụ thể có owner; không hand-waving "mua thêm capacity"</p></header>
+  <div class="slide-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Rủi ro</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th><th>Owner</th></tr></thead>
+        <tbody>
+          <tr><td>R1</td><td>OTel Collector fleet thành SPOF</td><td>Med</td><td>High</td><td>Deploy 3+ replicas/AZ; HPA on queue depth; synthetic canary 60s; runbook fallback manual DD agent</td><td>Platform Lead</td></tr>
+          <tr><td>R2</td><td>Log schema drift break Loki/ClickHouse/S3 cold parity</td><td>Med</td><td>Med</td><td>Schema registry (buf) in CI; required field allowlist; auto re-index job cold tier khi breaking change</td><td>Data Eng Lead</td></tr>
+          <tr><td>R3</td><td>Alert correlation over-suppress real pages</td><td>Low</td><td>High</td><td>Correlation rules versioned; "page anyway" escape hatch per service; weekly correlation audit replay incident history</td><td>SRE Lead</td></tr>
+          <tr><td>R4</td><td>VictoriaMetrics / Loki ops burden vượt capacity team</td><td>Med</td><td>Med</td><td>Managed offering eval at Week 4 gate (Grafana Cloud VM/Loki); budget reserved; runbook common ops</td><td>Platform Lead</td></tr>
+          <tr><td>R5</td><td>Giảm PD seat gây coverage gap</td><td>Low</td><td>Med</td><td>Schedule optimization trước (remove stale users); keep 5-seat buffer; auto seat re-provision via API nếu rotation đổi</td><td>EM</td></tr>
+          <tr><td>R6</td><td>Cost model invalid do vendor pricing change / 2× volume</td><td>Med</td><td>Med</td><td>Monthly cost review; 12% reserve; cardinality budgets CI-enforced; S3 Intelligent-Tiering cho cold archive auto-optimize</td><td>FinOps Lead</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12: POC Plan (A7) -->
+<section class="slide" data-index="11">
+  <header><h2 class="slide-header">A7 — POC Plan: Validate Component Không Chắc Chắn Nhất</h2><p class="slide-subtitle">Một assumption, 3-day spike, một measurable outcome</p></header>
+  <div class="slide-content">
+    <div class="card" style="border-color: #fed7aa;">
+      <h3>🔴 Component không chắc chắn nhất: Log Storage/Search Path (ClickHouse/Loki hot tier + S3 cold archive)</h3>
+      <p style="color: var(--muted); margin-bottom: 1rem;">Log là cost lever lớn nhất ($13.9K → $4.5K). Nếu hot tier không đạt p99 query latency cho top incident queries, hoặc audit retrieval từ S3 không clean, toàn bộ business case sụp đổ.</p>
+    </div>
+    <div class="grid-2" style="margin-top: 1rem;">
+      <div class="card"><h3>Assumption cần validate</h3><p style="color: var(--muted);">Top 5 incident queries (payment-svc pool exhaustion, catalog-db slow query, checkout-svc latency spike, recommender pipeline lag, payments-db lock contention) trả về kết quả trong p99 latency target với 7 ngày hot logs, và cold archive retrieval từ S3 hoạt động cho audit sample 30 ngày.</p></div>
+      <div class="card"><h3>3-Day Spike Plan</h3><ol style="color: var(--muted); line-height: 1.8;">
+        <li>Deploy ClickHouse/Loki + S3 cold archive staging (4h)</li>
+        <li>Replay 7 ngày logs từ production (payment-svc, catalog-db, checkout-svc, recommender-svc) (4h)</li>
+        <li>Chạy top 5 incident queries trên 1h/24h/7d windows; đo p99 latency, ingest lag (8h)</li>
+        <li>Verify S3 cold archive retrieval cho sample 30 ngày audit logs (4h)</li>
+      </ol></div>
+      <div class="card"><h3>Success Measurement</h3><p style="color: var(--muted);"><strong>Pass:</strong> P99 query latency ≤ target threshold; ingest lag < 30s; cold archive retrieval hoàn thành trong < 5 phút cho sample 30 ngày.<br><strong>Fail:</strong> P99 vượt threshold HOẶC cold retrieval không clean → redesign log tiering strategy trước Week 3 gate.</p></div>
+      <div class="card"><h3>Nếu Pass → Tiến hành Week 3 gate (Logs Hot cut-over)</h3><p style="color: var(--muted);">Nếu Fail → Fallback: tăng hot retention budget, xem xét managed Loki/Grafana Cloud Logs, hoặc giữ Splunk cho audit-only traffic trong khi vẫn migrate hot logs.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13: FINDINGS Q1 & Q2 -->
+<section class="slide" data-index="12">
+  <header><h2 class="slide-header">FINDINGS — Reflection Câu 1 &amp; 2</h2><p class="slide-subtitle">Tham chiếu artifact của chính mình với số liệu cụ thể</p></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Q1. Capability khó replace nhất?</h3>
+        <p style="color: var(--muted); line-height: 1.7;"><strong>Logs hot storage &amp; search (Splunk → Loki/ClickHouse/S3).</strong><br><br>Tại sao: Splunk cung cấp unified hot search + audit + compliance trong 1 tool. Thay thế cần stitch 3 hệ thống (Loki recent hot, ClickHouse analytics, S3 audit).<br><br><strong>Compromise:</strong> Chấp nhận dual query dialect (LogQL + SQL) và re-index cost khi schema đổi. Chỉ retain 7d hot structured — team cần raw log search >7d phải dùng S3 Athena/export (thêm latency, giảm convenience).</p>
+      </div>
+      <div class="card">
+        <h3>Q2. Trade resilience cho cost ở đâu?</h3>
+        <p style="color: var(--muted); line-height: 1.7;"><strong>Self-hosted OSS backend (VictoriaMetrics, Loki, Tempo, ClickHouse, OpenSearch).</strong><br><br><strong>Quantified trade-off:</strong> Tiết kiệm <strong>~$13.5K/tháng</strong> so với managed equivalents (Grafana Cloud, Elastic Cloud, Datadog).<br><br><strong>Chi phí resilience:</strong> Ước tính <strong>+5–8 phút time-to-root-cause</strong> khi backend incident (disk full, compaction lag, replica failover) vì team phải tự operate observability stack. Không có vendor SLA fallback.<br><br><strong>Mitigation:</strong> 12% reserve ($2.49K) fund managed fallback eval Week 4; runbooks + synthetic canaries.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 14: FINDINGS Q3 & Q4 -->
+<section class="slide" data-index="13">
+  <header><h2 class="slide-header">FINDINGS — Reflection Câu 3 &amp; 4</h2></header>
+  <div class="slide-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Q3. Nếu budget cut = 60% (target $16.8K)?</h3>
+        <p style="color: var(--muted); line-height: 1.7;"><strong>Quyết định THAY ĐỔI:</strong>
+<ul style="line-height: 1.6; margin: 0.5rem 0 0 1.25rem;">
+  <li>Drop PagerDuty → OSS paging (Alertmanager + ntfy/Slack) = tiết kiệm $2.7K</li>
+  <li>Giảm Loki hot retention 7d → 3d = tiết kiệm ~$1K</li>
+  <li>Aggressive trace sampling 10% → 3% = tiết kiệm ~$0.5K</li>
+  <li>Drop ClickHouse analytics = tiết kiệm ~$1.5K (logs chỉ Loki)</li>
+  <li>Giảm OSS backend reserve (cluster nhỏ hơn) = tiết kiệm ~$1K</li>
+</ul>
+<strong>Quyết định GỮ LẠI:</strong> OTel-first ingestion, tiered log architecture, Grafana single surface, correlation before paging.
+<br><br><strong>Insight:</strong> Log tiering + host-priced APM removal = structural ~60% savings. Paging &amp; analytics là marginal levers.
+</p>
+      </div>
+      <div class="card">
+        <h3>Q4. Pattern copy từ real system?</h3>
+        <p style="color: var(--muted); line-height: 1.7;"><strong>System:</strong> <strong>Uber M3 + Jaeger + internal correlation (2018–2020)</strong> / <strong>Datadog Watchdog topology correlation</strong>.<br><br><strong>Pattern:</strong> <em>Service-graph-derived alert correlation với rule "critical path never suppress"</em>. Uber M3 dùng dependency graph inhibit downstream alerts; Datadog Watchdog auto-discover service topology.<br><br><strong>Điều chúng tôi thay đổi:</strong>
+<ul style="line-height: 1.6; margin: 0.5rem 0 0 1.25rem;">
+  <li>Service graph <strong>trace-derived</strong> (OTel) không phải config-only — self-updating</li>
+  <li>Thêm <strong>incident knowledge index</strong> (OpenSearch) cho similar-incident retrieval — không có ở Uber/Datadog</li>
+  <li>Giữ <strong>PagerDuty làm paging surface</strong> — Uber build custom pager</li>
+  <li><strong>Explicit rollback mỗi tuần</strong> — migration discipline không có trong pattern gốc</li>
+</ul>
+</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 15: FINDINGS Q5 -->
+<section class="slide" data-index="14">
+  <header><h2 class="slide-header">FINDINGS — Reflection Câu 5</h2><p class="slide-subtitle">Unknown lớn nhất + Week 1 spike de-risk</p></header>
+  <div class="slide-content">
+    <div class="card" style="border-color: #fed7aa;">
+      <h3>Q5. Unknown lớn nhất có thể derail migration ở Week N?</h3>
+      <p style="color: var(--muted); line-height: 1.8; font-size: 1.0625rem;"><strong>Week 5–6 gate — Log hot tier chưa đạt incident-query latency và audit requirements.</strong> Đây là cost lever lớn nhất ($13.9K → $4.5K). Nếu p99 query latency tệ hơn Splunk, hoặc audit không retrieve được sample từ S3 cleanly, migration stall vì logs dominate cost structure. Cần xác định top incident queries, prepare replay data, và set exact p99/pass thresholds trước mọi log cut-over.</p>
+    </div>
+    <div class="card" style="margin-top: 1rem; border-color: #bbf7d0;">
+      <h3>Week 1 Spike để De-Risk</h3>
+      <p style="color: var(--muted); line-height: 1.8;">Chạy <strong>A7 POC</strong> (log hot tier validation) ở Week 1 dùng <strong>staged environment</strong> — replay 7 ngày production logs. Nếu POC fail (p99 vượt threshold), ta biết trước Week 2 và có thể:</p>
+      <ul style="color: var(--muted); line-height: 1.8; margin: 0.5rem 0 0 1.25rem;">
+        <li>Tăng hot retention budget hoặc dùng managed Loki/Grafana Cloud Logs</li>
+        <li>Giữ Splunk cho audit-only traffic trong khi migrate hot logs</li>
+        <li>Adjust cost model: allocate thêm budget cho log tier từ reserve</li>
+      </ul>
+      <p style="color: var(--muted); margin-top: 0.5rem;">Đây là <strong>single highest-leverage spike</strong> vì nó validate cost assumption lớn nhất TRƯỚC mọi production cut-over.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 16: Rubric Coverage -->
+<section class="slide" data-index="15">
+  <header><h2 class="slide-header">Rubric Coverage — Dự kiến điểm</h2><p class="slide-subtitle">Đủ 100 điểm required + optional evidence</p></header>
+  <div class="slide-content">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>Weight</th><th>Artifact</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td>A1 Architecture Diagram</td><td>10</td><td>target-observability-aiops-architecture.drawio + .svg</td><td>✅ Tất cả signal paths, human surfaces, SaaS/OSS boundaries, color-coded zones</td></tr>
+          <tr><td>A2 Component Decision Table</td><td>15</td><td>components.md</td><td>✅ 6 capabilities, why + 6-month risk mỗi cái</td></tr>
+          <tr><td>A3 Cost Model</td><td>20</td><td>cost-model.md</td><td>✅ $42K→$20.9K (50.2%), sensitivity, public pricing citations (DD, PD, Grafana, AWS)</td></tr>
+          <tr><td>A4 Two ADRs</td><td>20</td><td>adr/adr-001-*.md, adr/adr-002-*.md</td><td>✅ Hard decisions (tiered logs, OTel+PD), ≥2 alternatives, honest consequences</td></tr>
+          <tr><td>A5 Migration Plan</td><td>15</td><td>migration-plan.md</td><td>✅ 8 tuần, rollback mỗi tuần, no blackout, go/no-go gates</td></tr>
+          <tr><td>A6 Risk Register</td><td>5</td><td>risks.md</td><td>✅ 6 rows, specific mitigations, owners</td></tr>
+          <tr><td>A7 POC Plan</td><td>5</td><td>FINDINGS.md</td><td>✅ One component, one assumption, one measurement</td></tr>
+          <tr><td>FINDINGS (5 Qs)</td><td>10</td><td>FINDINGS.md</td><td>✅ 5 câu trả lời với concrete refs tới artifacts</td></tr>
+          <tr><td>Optional (Partial)</td><td>+10 bonus</td><td>FINDINGS.md §POC, cost sensitivity deep-dive</td><td>✅ POC plan chi tiết; sensitivity scenario quantified</td></tr>
+          <tr style="font-weight: 600; color: var(--accent);"><td>TỔNG</td><td>100 (+10)</td><td colspan="2">Dự kiến ≥ 90/100 (Excellent tier)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 17: Closing -->
+<section class="slide" data-index="16">
+  <div class="slide-content" style="justify-content: center; align-items: center; text-align: center;">
+    <h1 class="slide-header" style="font-size: clamp(2.5rem, 5vw, 4rem);">Cảm ơn</h1>
+    <p class="slide-subtitle" style="font-size: clamp(1.25rem, 2.5vw, 1.75rem); max-width: 700px; margin-bottom: 3rem;">GeekShop Observability + AIOps Stack Redesign<br>Sẵn sàng review — toàn bộ artifacts trong submission package</p>
+    <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; color: var(--muted); font-size: 1rem;">
+      <span>📦 <code>XB-DN26-083_Nguyen-Huu-Dinh_AIOps_AIO-03_w2.zip</code></span>
+      <span>📁 Architecture: <code>.drawio</code> + <code>.svg</code></span>
+      <span>📄 Tất cả markdown artifacts included</span>
+    </div>
+    <div class="arrows" style="margin-top: 3rem;">
+      <button class="arrow-btn" onclick="prevSlide()">←</button>
+      <button class="arrow-btn" onclick="goSlide(0)">🏠</button>
+    </div>
+  </div>
+</section>
+
+<nav class="nav">
+  <button id="btnPrev" onclick="prevSlide()" disabled>◀ Trước</button>
+  <button id="btnNext" onclick="nextSlide()">Tiếp ▶</button>
+</nav>
+<div class="slide-counter" id="counter">1 / 17</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const counter = document.getElementById('counter');
+  const progress = document.getElement('progress');
+  let current = 0;
+  const total = slides.length;
+
+  function showSlide(n) {
+    slides.forEach((s, i) => {
+      s.classList.toggle('active', i === n);
+    });
+    current = n;
+    btnPrev.disabled = (n === 0);
+    btnNext.disabled = (n === total - 1);
+    counter.textContent = `${n + 1} / ${total}`;
+    progress.style.width = `${((n + 1) / total) * 100}%`;
+  }
+
+  function nextSlide() { if (current < total - 1) showSlide(current + 1); }
+  function prevSlide() { if (current > 0) showSlide(current - 1); }
+  function goSlide(n) { if (n >= 0 && n < total) showSlide(n); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+    if (e.key === 'ArrowLeft') prevSlide();
+    if (e.key === 'Home') goSlide(0);
+    if (e.key === 'End') goSlide(total - 1);
+    if (e.key >= '1' && e.key <= '9') goSlide(parseInt(e.key) - 1);
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { if (dx < 0) nextSlide(); else prevSlide(); }
+  });
+</script>
+</body>
+</html>
