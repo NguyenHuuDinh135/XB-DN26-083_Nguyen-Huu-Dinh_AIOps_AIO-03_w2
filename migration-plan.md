@@ -2,6 +2,13 @@
 
 Migration rule: no observability blackout during business hours. Every production cut-over has a rollback path that restores the previous telemetry path within 30 minutes.
 
+## Evidence behind the gates
+
+- `inputs/services.json` defines the migration blast radius: 10 services, 4 backing stores, and 17 service edges.
+- `inputs/current-stack.md` defines the systems that must be dual-run before cut-over: Datadog, Splunk, Grafana, PagerDuty, and Statuspage.
+- `inputs/incidents_history.json` provides replay candidates for slow query, connection pool exhaustion, and payment/checkout/catalog failure modes.
+- `inputs/pain_points.md` drives the gates for four-UI triage, 47-page alert cascades, missing trace tail events, and slow cross-7-day Splunk searches.
+
 | Week | Work | Go/no-go gate | Rollback path (≤30 min) |
 |---|---|---|---|
 | 1 | Inventory Datadog monitors, Splunk saved searches, Grafana dashboards, PagerDuty integrations, and critical service owners. File Splunk non-renewal calendar notice (contract notice is 90 days). | 100% critical alerts and dashboards mapped to owners; Splunk renewal date visible in team calendar. | No production change. Keep existing stack as source of truth. Owner: EM. |
@@ -19,3 +26,13 @@ Migration rule: no observability blackout during business hours. Every productio
 - Production cut-overs occur outside business hours with named rollback owner.
 - Old SaaS paths stay read-only for at least 30 days after each signal migration.
 - The team never disables Datadog/Splunk/PagerDuty authority until equivalent target telemetry has passed a replay or synthetic incident gate.
+
+## Evidence-to-gate traceability
+
+| Gate | Evidence it protects | Why the threshold is there |
+|---|---|---|
+| 95% critical dashboards/alerts reproduced | Current stack has several human-facing surfaces and existing operational habits. | Prevents a cost migration from silently dropping known diagnostics. |
+| Top 5 log queries p99 benchmark | Splunk is the largest cost line but also the audit/search workhorse. | Ensures the biggest cost lever does not regress incident response. |
+| 0 critical pages suppressed in shadow mode | Pain points include 47-page cascades, but suppression is safety-sensitive. | Starts with grouping and evidence before any page suppression. |
+| Synthetic payment incident triaged from Grafana first | Incident history repeatedly involves payment/checkout/catalog paths. | Proves the new “single starting point” workflow before PagerDuty cut-over. |
+| Rollback drill under 30 minutes | Lab explicitly rejects observability blackout. | Makes rollback operational, not just a written promise. |

@@ -4,6 +4,14 @@
 
 The current stack fragments incident context across Datadog APM, Datadog Logs, Splunk, Grafana, and PagerDuty. Pain point #3 says on-call opens four dashboards during every multi-service incident and spends a median **8 minutes** from page to first hypothesis. Pain point #5 says cascades can produce 47 PagerDuty incidents in 90 seconds. The lab requires a 30% median time-to-root-cause reduction without losing incident-response maturity.
 
+Evidence used:
+
+- `inputs/current-stack.md`: Datadog and Splunk are separate major spend/UX surfaces; PagerDuty is already the accepted paging layer.
+- `inputs/pain_points.md`: four-UI triage, 47-page cascades, low trace sampling, and missing incident decision trail.
+- `inputs/incidents_history.json`: median MTTD **11 minutes**, median MTTR **26 minutes**, and recurring multi-service failure paths.
+- OpenTelemetry docs: Collector pipelines support receivers, processors, exporters, and processors that transform/filter/enrich telemetry.
+- Tempo/Grafana docs: service graph views use trace-derived metrics and support trace/log/metric correlation in Grafana.
+
 ## Decision
 
 Make OpenTelemetry the common ingest layer for metrics, logs, and traces. Add topology-aware correlation using Alertmanager plus Robusta-style fingerprint/service-graph grouping before alerts reach PagerDuty. Retain PagerDuty as the human paging/routing system, but only after correlation and deduplication. Grafana becomes the primary starting surface for SLOs, dashboards, trace/log drilldown, and incident timeline links.
@@ -32,3 +40,5 @@ Negative consequences:
 ## Validation gate
 
 Run shadow correlation for two weeks: PagerDuty receives current production alerts while the new correlation layer labels what it would have grouped/suppressed. Cut over only if: (a) ≥95% of historical critical alerts map correctly, (b) 0 critical pages would have been suppressed, (c) median pages/incident ≤ 1.2, (d) on-call can triage one synthetic payment incident from Grafana first, and (e) rollback drill completes under 30 minutes.
+
+The gate deliberately separates grouping from suppression. The first production behavior change is fewer duplicate pages; suppressing pages requires replay evidence and an explicit service-owner escape hatch.

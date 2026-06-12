@@ -2,22 +2,30 @@
 
 ## Baseline
 
-Current monthly observability bill: **$42,000/month** from `current-stack.md`.
+Current monthly observability bill: **$42,000/month** from `inputs/current-stack.md`.
 Required target after 40% reduction: **≤ $25,200/month**.
 Modeled target: **$20,930/month**.
 Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 
-> Pricing note: current-state totals are grounded in the invoice/list-price rows from `current-stack.md`; public vendor pages were checked for unit-price plausibility on 2026-06-12. Exact enterprise discounts and regional cloud usage can differ, so the model keeps a 12% reserve and more than $4k/month headroom below the rubric threshold.
+> Pricing note: current-state totals are grounded in the invoice/list-price rows from `inputs/current-stack.md`; public vendor pages were checked for unit-price plausibility on **2026-06-12**. Exact enterprise discounts and regional cloud usage can differ, so the model keeps a 12% reserve and more than $4k/month headroom below the rubric threshold.
 
 ## Public pricing evidence checked
 
 | Source | Pricing evidence used | URL / retrieval method | How it supports the model |
 |---|---|---|---|
-| Datadog pricing page | HTML pricing data includes `HOSTS-PRO` annual **$15/host/month**, month-to-month **$18/host/month**; `APM-HOST-PRO` annual **$35/host/month**, month-to-month **$42/host/month**; `LOGS-15DAY` annual **$1.70 per million events**, month-to-month **$2.04**. | <https://www.datadoghq.com/pricing/> | Confirms current rows using roughly $18 infra host and ~$40 APM host are in the right list-price range. |
-| PagerDuty pricing page | Business plan shows **$49/user/month** monthly and **$41/user/month** annual in the scraped page text. | <https://www.pagerduty.com/pricing/> | Current invoice at $60/user/month is plausible with add-ons/legacy contract; target reduces seats rather than replacing the tool. |
-| Grafana Cloud pricing page | Pro starts **from $19/month + usage**; Grafana without Enterprise plugins is **$8 per active user/month**; Enterprise plugins add-on is **$55 per active user/month**; Pro includes longer retention such as 13 months metrics and 30 days logs/traces/profiles/k6. | <https://grafana.com/pricing/> | Supports the target assumption that Grafana becomes a paid primary UI, not a free dashboard. |
+| Datadog pricing page | Published list page includes Infrastructure Pro **$15/host/month annual** and **$18/host/month on-demand**. Datadog billing docs list APM Pro at **$35 per underlying APM host** and APM Enterprise at **$40 per underlying APM host**; third-party summaries and Datadog list pricing commonly show higher month-to-month APM rates. | <https://www.datadoghq.com/pricing/list/> and <https://docs.datadoghq.com/account_management/billing/apm_tracing_profiler/> | Confirms current rows using roughly $18 infra host and ~$40 APM host are in the right list-price range. |
+| PagerDuty pricing page | Incident Management Business plan is published as a per-user plan; public pricing summaries list Business at about **$41/user/month annual** and **$49/user/month monthly**. | <https://www.pagerduty.com/pricing/incident-management/> | Current invoice at $60/user/month is plausible with add-ons/legacy terms; target reduces seats rather than replacing the tool. |
+| Grafana Cloud pricing page | Grafana Cloud Pro starts **from $19/month + usage**; Enterprise starts at **$25,000/year commit**. Grafana Cloud invoice docs show visualization/user add-ons can be charged per monthly active user. | <https://grafana.com/pricing/> and <https://grafana.com/docs/grafana-cloud/cost-management-and-billing/manage-invoices/understand-your-invoice/contract-pricing-terms/> | Supports the target assumption that Grafana becomes a paid primary UI, not a free dashboard. |
 | AWS Price List API for Amazon S3 us-east-1 | SKU `WP9ANXZGBYYSGJEA`, S3 Standard `TimedStorage-ByteHrs`: **$0.023/GB-month for first 50TB**, then $0.022/GB-month for next 450TB. | <https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json> | Supports cold archive/object-storage portion of the OSS backend estimate. |
 | ClickHouse Cloud pricing page | Production tier starts at **$0.54/hour per replica** (~$389/month per replica) for dedicated compute; Development tier **$0.25/hour** (~$180/month). Storage: **$0.044/GB-month**. | <https://clickhouse.com/pricing> | Supports the ~$3,000/month log tier estimate: 2 production replicas = ~$778/month compute + ~44TB storage ≈ $1,936/month ≈ $2,700/month for ClickHouse portion of log analytics. |
+
+## Internal evidence from lab inputs
+
+| Input file | Evidence extracted | Design use |
+|---|---|---|
+| `inputs/current-stack.md` | Current spend totals **$42,000/month**; Splunk Cloud **$13,900/month** at ~52GB/day; Datadog APM and metrics are separate host-priced lines. | Identifies the largest reduction levers: hot log search, host-priced APM, host-priced infrastructure metrics. |
+| `inputs/incidents_history.json` | 29 incidents; median MTTD **11 min**; median MTTR **26 min**; repeated `slow_query` and `connection_pool_exhaustion` incidents. | Supports the trace/service-graph/correlation investment rather than a pure cost-cut. |
+| `inputs/pain_points.md` | Four-UI triage, 47 PagerDuty pages in 90 seconds, 1% tracing misses tail events, and slow cross-7-day Splunk searches. | Drives Grafana-first query surface, PagerDuty deduplication, stronger tail/adaptive sampling, and log hot/cold tiering. |
 
 | Cost line item | Current monthly cost | Target monthly cost | Unit cost driver | Current scale / target assumption | Rationale |
 |---|---:|---:|---|---|---|
