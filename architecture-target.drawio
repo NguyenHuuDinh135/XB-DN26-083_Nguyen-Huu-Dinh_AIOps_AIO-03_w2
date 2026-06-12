@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Codex">
   <diagram id="main" name="Architecture">
-    <mxGraphModel dx="594" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2350" pageHeight="1080" math="0" shadow="0">
+    <mxGraphModel dx="546" dy="786" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2350" pageHeight="1080" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -159,8 +159,8 @@
         <mxCell id="e7" edge="1" parent="1" source="ic-loki" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Helvetica;fontSize=11;strokeColor=#3F8624;strokeWidth=2;endArrow=block;endFill=1;dashed=1;" target="ic-s3" value="">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="682" y="644" />
-              <mxPoint x="682" y="830" />
+              <mxPoint x="790" y="590" />
+              <mxPoint x="790" y="884" />
             </Array>
           </mxGeometry>
         </mxCell>
