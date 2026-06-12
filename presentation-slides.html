@@ -213,7 +213,7 @@
 
 <!-- SLIDE 7: Cost Model (A3) -->
 <section class="slide" data-index="6">
-  <header><h2 class="slide-header">A3 — Cost Model: $42K → $20.9K (giảm 50.2%)</h2><p class="slide-subtitle">Credible với public vendor pricing; 12% reserve; dư $4.3K so với ngưỡng 40%</p></header>
+  <header><h2 class="slide-header">A3 — Cost Model: $42K → $20.9K (giảm 50.2%)</h2><p class="slide-subtitle">Credible với public vendor pricing; $2.49K burst reserve; dư $4.3K so với ngưỡng 40%</p></header>
   <div class="slide-content">
     <div class="table-wrap">
       <table>
@@ -228,7 +228,7 @@
           <tr><td>Grafana Cloud Pro</td><td>$1,050</td><td>$2,500</td><td>$8–55/active user/tháng</td><td>Primary query surface; list price: grafana.com/pricing ($8 base, $55 Enterprise plugins)</td></tr>
           <tr><td>Statuspage + Synthetics + Khác</td><td>$1,650</td><td>$940</td><td>—</td><td>Giữ critical checks; low-value chuyển sang OSS</td></tr>
           <tr><td>OSS backend compute/storage (MỚI)</td><td>$0</td><td>$7,500</td><td>VM, disks, S3, ops</td><td>~$3K log tier (Loki+ClickHouse+S3), ~$2.5K metrics (VictoriaMetrics), ~$1.2K tracing (Tempo), ~$0.8K incident index (OpenSearch)</td></tr>
-          <tr><td>Operational reserve (12%)</td><td>$0</td><td>$2,490</td><td>contingency</td><td>Dual-run, volume spikes, migration overhead</td></tr>
+          <tr><td>Operational reserve</td><td>$0</td><td>$2,490</td><td>contingency buffer</td><td>Dual-run, volume spikes, migration overhead</td></tr>
           <tr style="font-weight: 600; color: var(--accent);"><td>TỔNG</td><td>$42,000</td><td>$20,930</td><td colspan="3">Giảm 50.2% · Target ≤ $25,200 threshold</td></tr>
         </tbody>
       </table>
@@ -310,7 +310,7 @@
           <tr><td>R3</td><td>Alert correlation over-suppress real pages</td><td>Low</td><td>High</td><td>Correlation rules versioned; "page anyway" escape hatch per service; weekly correlation audit replay incident history</td><td>SRE Lead</td></tr>
           <tr><td>R4</td><td>VictoriaMetrics / Loki ops burden vượt capacity team</td><td>Med</td><td>Med</td><td>Managed offering eval at Week 4 gate (Grafana Cloud VM/Loki); budget reserved; runbook common ops</td><td>Platform Lead</td></tr>
           <tr><td>R5</td><td>Giảm PD seat gây coverage gap</td><td>Low</td><td>Med</td><td>Schedule optimization trước (remove stale users); keep 5-seat buffer; auto seat re-provision via API nếu rotation đổi</td><td>EM</td></tr>
-          <tr><td>R6</td><td>Cost model invalid do vendor pricing change / 2× volume</td><td>Med</td><td>Med</td><td>Monthly cost review; 12% reserve; cardinality budgets CI-enforced; S3 Intelligent-Tiering cho cold archive auto-optimize</td><td>FinOps Lead</td></tr>
+          <tr><td>R6</td><td>Cost model invalid do vendor pricing change / 2× volume</td><td>Med</td><td>Med</td><td>Monthly cost review; $2.49K reserve; cardinality budgets CI-enforced; S3 Intelligent-Tiering cho cold archive auto-optimize</td><td>FinOps Lead</td></tr>
         </tbody>
       </table>
     </div>
@@ -350,7 +350,7 @@
       </div>
       <div class="card">
         <h3>Q2. Trade resilience cho cost ở đâu?</h3>
-        <p style="color: var(--muted); line-height: 1.7;"><strong>Self-hosted OSS backend (VictoriaMetrics, Loki, Tempo, ClickHouse, OpenSearch).</strong><br><br><strong>Quantified trade-off:</strong> Tiết kiệm <strong>~$13.5K/tháng</strong> so với managed equivalents (Grafana Cloud, Elastic Cloud, Datadog).<br><br><strong>Chi phí resilience:</strong> Ước tính <strong>+5–8 phút time-to-root-cause</strong> khi backend incident (disk full, compaction lag, replica failover) vì team phải tự operate observability stack. Không có vendor SLA fallback.<br><br><strong>Mitigation:</strong> 12% reserve ($2.49K) fund managed fallback eval Week 4; runbooks + synthetic canaries.</p>
+        <p style="color: var(--muted); line-height: 1.7;"><strong>Self-hosted OSS backend (VictoriaMetrics, Loki, Tempo, ClickHouse, OpenSearch).</strong><br><br><strong>Quantified trade-off:</strong> Tiết kiệm <strong>~$13.5K/tháng</strong> so với managed equivalents (Grafana Cloud, Elastic Cloud, Datadog).<br><br><strong>Chi phí resilience:</strong> Ước tính <strong>+5–8 phút time-to-root-cause</strong> khi backend incident (disk full, compaction lag, replica failover) vì team phải tự operate observability stack. Không có vendor SLA fallback.<br><br><strong>Mitigation:</strong> $2.49K reserve funds managed fallback eval Week 4; runbooks + synthetic canaries.</p>
       </div>
     </div>
   </div>

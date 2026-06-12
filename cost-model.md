@@ -7,7 +7,7 @@ Required target after 40% reduction: **≤ $25,200/month**.
 Modeled target: **$20,930/month**.
 Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 
-> Pricing note: current-state totals are grounded in the invoice/list-price rows from `inputs/current-stack.md`; public vendor pages were checked for unit-price plausibility on **2026-06-12**. Exact enterprise discounts and regional cloud usage can differ, so the model keeps a 12% reserve and more than $4k/month headroom below the rubric threshold.
+> Pricing note: current-state totals are grounded in the invoice/list-price rows from `inputs/current-stack.md`; public vendor pages were checked for unit-price plausibility on **2026-06-12**. Exact enterprise discounts and regional cloud usage can differ, so the model keeps a $2,490/month burst reserve and more than $4k/month headroom below the rubric threshold.
 
 ## Public pricing evidence checked
 
@@ -33,14 +33,14 @@ Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 | Datadog infrastructure metrics | $5,400 | $0 | $18/host/month | 300 hosts → VictoriaMetrics (PromAgent remote-write) | Host-based infra metrics replaced by OSS/hybrid metrics backend. |
 | Datadog custom metrics overage | $2,200 | $300 | active-series overage | ~440K excess series → governed label budget + 85% reduction | Cardinality policy processor blocks `customer_id`-style explosions. |
 | Datadog indexed logs | $1,800 | $0 | indexed events | ~1.05B events/month → routed through OTel/Filelog | Hot indexed logs consolidate into target log tier. |
-| Splunk Cloud log storage/search | $13,900 | $4,500 | GB/day indexed + workload | 52GB/day, 30d retention → 7d Loki hot + ClickHouse analytics + S3 cold archive (1yr) | Biggest cost lever (~68% reduction on logs). The $4,500 target reflects the log platform allocation within the broader $7,500 OSS backend — log infra is NOT excluded from the OSS line; this row simply makes the Splunk→OSS transition visible to the reviewer. |
+| Splunk Cloud log storage/search | $13,900 | $4,500 | GB/day indexed + workload | 52GB/day, 30d retention → 7d Loki hot + ClickHouse analytics + S3 cold archive (1yr) | Biggest cost lever (~68% reduction on logs). This row is the **additive target log-platform budget**, not a subset of another row: ~$2,700 ClickHouse analytics/search, ~$1,200 Loki hot operational logs, ~$300 S3 cold archive, ~$300 queue/export/egress margin. |
 | PagerDuty Business | $3,900 | $2,700 | $60/user/month | 65 users → 45 active responders after schedule cleanup | Keep paging surface, reduce seats and incident volume after correlation. |
 | Grafana Cloud Pro | $1,050 | $2,500 | active users / managed stack | 18 users → primary query/SLO surface | Cost rises because Grafana becomes the main operational UI. |
 | Statuspage | $290 | $290 | tiered subscription | unchanged | Customer-facing comms remain unchanged. |
 | Datadog Synthetics | $1,360 | $650 | API checks/month | ~270 checks → retain critical checks, move low-value checks to OSS/prober | Keep critical external checks while removing duplicate low-value checks. |
 | Tracing premium tier | $300 | $0 | add-on | removed | Replaced by OTel-native tracing (Tempo). |
-| Observability backend compute/storage | $0 | $7,500 | compute, disks, object storage, ops overhead | VictoriaMetrics, Loki, ClickHouse, Tempo, OpenSearch | OSS is not free. Sub-allocation: ~$3,000 log tier (Loki + ClickHouse + S3 cold), ~$2,500 metrics tier (VictoriaMetrics), ~$1,200 tracing tier (Tempo), ~$800 incident index (OpenSearch). The $4,500 Splunk row above is a subset of this $7,500 total — it isolates the log platform cost for reviewer visibility but is not additive in the total calculation. |
-| Operational reserve / burst buffer | $0 | $2,490 | 12% contingency | temporary dual-run and volume spikes | Prevents hidden cost from invalidating the model. |
+| Non-log observability backend compute/storage | $0 | $7,500 | compute, disks, object storage, ops overhead | VictoriaMetrics, Tempo, OpenSearch, HA collectors, platform SLO monitoring | OSS is not free. This row intentionally excludes the $4,500 log-platform row above to avoid double counting. Sub-allocation: ~$3,500 metrics tier (VictoriaMetrics), ~$1,800 tracing tier (Tempo), ~$1,000 incident index/search (OpenSearch), ~$1,200 OTel collector HA, platform monitoring, backups, and ops overhead. |
+| Operational reserve / burst buffer | $0 | $2,490 | contingency buffer | temporary dual-run, ingest spikes, short vendor overlap | Prevents hidden transition and growth cost from invalidating the model. This is a reserve line, not an already-committed platform component. |
 | **Total** | **$42,000** | **$20,930** |  |  | **50.2% reduction** (target ≤ $25,200 required threshold) |
 
 ## Sensitivity: data volume grows 2x faster than projected
@@ -51,7 +51,7 @@ Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 
 ## Why this is credible enough for review
 
-- The plan does not assume OSS is free; it adds $7.5k/month for backend compute/storage and $2.49k/month reserve.
+- The plan does not assume OSS is free; it adds $4.5k/month for the target log platform, $7.5k/month for non-log backend compute/storage, and $2.49k/month reserve.
 - The largest saving comes from eliminating duplicate host-priced APM/metrics and shrinking hot log search, matching the input hint that logs dominate cost.
 - PagerDuty is retained to avoid operational regression; only seat count and upstream noise are reduced.
 - The design leaves over $4k/month headroom below the required $25.2k target.

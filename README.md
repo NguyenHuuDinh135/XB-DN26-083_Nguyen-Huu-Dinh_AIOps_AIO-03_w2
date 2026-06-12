@@ -15,6 +15,7 @@ This package contains the required Week 2 AIOps lab submission artifacts. Start 
 5. `migration-plan.md` — eight-week migration with rollback and go/no-go gates.
 6. `risks.md` — six highest risks, owners, and mitigations.
 7. `FINDINGS.md` — required reflection plus the A7 POC validation plan.
+8. `optional-bonus.md` — optional capacity, vendor exit, skills-gap, and DR analysis.
 
 Supporting material is organized separately:
 
@@ -22,7 +23,7 @@ Supporting material is organized separately:
 - `inputs/` — original lab input data used as evidence.
 - `assets/icons/` — local vendor/tool icons used while designing diagrams; the submitted Draw.io files also embed the icons so they render without external paths.
 
-The design keeps PagerDuty as the paging surface, moves ingestion to OpenTelemetry, tiers logs into hot searchable storage plus cold S3 archive, and uses service-graph-aware alert correlation before paging. The target bill is modeled at **$20,930/month**, a **50.2% reduction** from the current $42,000/month baseline, while preserving diagnostic speed through better tracing, correlation, and incident retrieval.
+The design keeps PagerDuty as the paging surface, moves ingestion to OpenTelemetry, tiers logs into hot searchable storage plus cold S3 archive, and uses service-graph-aware alert correlation before paging. The target bill is modeled at **$20,930/month**, a **50.2% reduction** from the current $42,000/month baseline. Median MTTR must move from **26 minutes** to **≤18.2 minutes** to satisfy the 30% root-cause-time reduction requirement; the migration gates therefore validate synthetic incident triage, service-graph completeness, trace sampling, and top log-query latency before any SaaS reduction.
 
 ## Evidence basis
 
@@ -30,3 +31,17 @@ The design keeps PagerDuty as the paging surface, moves ingestion to OpenTelemet
 - Application topology comes from `inputs/services.json`: 10 application services, 4 backing stores, and 17 service edges.
 - Incident claims come from `inputs/incidents_history.json`: 29 incidents, median MTTD **11 minutes**, median MTTR **26 minutes**, and repeated slow-query / connection-pool failure classes.
 - Operational pain points come from `inputs/pain_points.md`, especially four-UI incident triage, 47-page alert cascades, 1% trace sampling gaps, cardinality overage, and slow 7-day log searches.
+
+## Rubric checklist
+
+| Rubric item | Artifact | Status |
+|---|---|---|
+| A1 architecture diagram | `architecture-target.png`, `architecture-target.drawio` | Complete: signal paths, retention tiers, alert/correlation surface, human query surfaces, and SaaS/OSS/in-house boundaries are shown. |
+| A2 component decisions | `components.md` | Complete: all required capabilities have a chosen component, why it was chosen, and what worsens if changed later. |
+| A3 cost model | `cost-model.md` | Complete: target is **$20,930/month**, **50.2%** below baseline, with unit drivers, public pricing evidence, and 2x-growth sensitivity. |
+| A4 ADRs | `adr/adr-001-tiered-log-storage.md`, `adr/adr-002-otel-correlation-pagerduty.md` | Complete: both ADRs cover hard choices, rejected alternatives, consequences, and validation gates. |
+| A5 migration plan | `migration-plan.md` | Complete: eight weeks, rollback per cut-over, no-blackout guarantee, go/no-go gates. |
+| A6 risk register | `risks.md` | Complete: six risks with likelihood, impact, mitigation, and owner. |
+| A7 POC plan | `FINDINGS.md` | Complete: uncertain component, first assumption, measurements, pass/fail threshold. |
+| Reflection | `FINDINGS.md` | Complete: all five questions reference concrete numbers and design choices. |
+| Optional bonus | `optional-bonus.md` | Added: capacity model, vendor exit clauses, skills-gap plan, and DR posture. |
