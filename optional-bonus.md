@@ -2,6 +2,13 @@
 
 This section is not required for A1-A7, but it reduces reviewer uncertainty around six-month execution risk.
 
+Optional coverage:
+
+- **B Capacity model:** 12-month growth scenarios and budget pressure.
+- **C Vendor exit-clause analysis:** contract terms needed for controlled migration.
+- **D Skills-gap + transition plan:** role-by-role training and success signals.
+- **E Multi-region / DR posture:** observability component RTO/RPO targets.
+
 ## B. Capacity Model
 
 Baseline evidence:
@@ -12,9 +19,9 @@ Baseline evidence:
 
 | Scenario | 12-month assumption | Log volume | Target monthly cost impact | Budget status |
 |---|---|---:|---:|---|
-| Slow growth | Service count stable; 15% more traffic/logs after structured logging cleanup. | ~60GB/day raw; hot indexed subset stays near 35GB/day. | +$800 to +$1,200 | Still under $25,200. |
-| Expected growth | 20% traffic growth plus two new services; label budgets remove high-cardinality waste. | ~78GB/day raw; hot indexed subset ~45GB/day. | +$1,800 to +$2,800 | Still under $25,200 if hot retention remains 7 days. |
-| Fast growth | Traffic doubles before sampling/tiering policies mature. | ~104GB/day raw; hot indexed subset can exceed 65GB/day. | +$3,000 to +$6,000 | Budget risk; first constraint is log hot-tier cost and p99 query latency. |
+| Slow growth | Service count stable; 15% more traffic/logs after structured logging cleanup. | ~60GB/day raw; hot indexed volume stays near 35GB/day. | +$800 to +$1,200 | Still under $25,200. |
+| Expected growth | 20% traffic growth plus two new services; label budgets remove high-cardinality waste. | ~78GB/day raw; hot indexed volume ~45GB/day. | +$1,800 to +$2,800 | Still under $25,200 if hot retention remains 7 days. |
+| Fast growth | Traffic doubles before sampling/tiering policies mature. | ~104GB/day raw; hot indexed volume can exceed 65GB/day. | +$3,000 to +$6,000 | Budget risk; first constraint is log hot-tier cost and p99 query latency. |
 
 Capacity controls:
 
@@ -53,4 +60,3 @@ The application itself is not redesigned for multi-region in this lab, but the o
 | ClickHouse analytics | Replicated production nodes and daily backup of structured log tables. | 4 hours | 24 hours | SQL analytics supports audit and incident deep dive, but not first-line paging. |
 | S3 cold archive | Versioning, lifecycle policy, and object lock for audit prefixes. | 24 hours | Near-zero once object is written | Cold archive is the compliance backstop. |
 | PagerDuty | SaaS retained; export schedules/integrations monthly. | Vendor-managed | Vendor-managed | Paging maturity is preserved by not replacing PagerDuty during telemetry migration. |
-

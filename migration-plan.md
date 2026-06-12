@@ -36,3 +36,16 @@ Migration rule: no observability blackout during business hours. Every productio
 | 0 critical pages suppressed in shadow mode | Pain points include 47-page cascades, but suppression is safety-sensitive. | Starts with grouping and evidence before any page suppression. |
 | Synthetic payment incident triaged from Grafana first | Incident history repeatedly involves payment/checkout/catalog paths. | Proves the new “single starting point” workflow before PagerDuty cut-over. |
 | Rollback drill under 30 minutes | Lab explicitly rejects observability blackout. | Makes rollback operational, not just a written promise. |
+
+## Gate evidence artifacts
+
+| Week | Artifact reviewer should expect | Owner | Pass evidence |
+|---|---|---|---|
+| 1 | Critical alert/dashboard inventory and Splunk renewal calendar entry. | EM | 100% critical alerts mapped to owner and renewal notice dates captured. |
+| 2 | OTel shadow ingest report. | Platform Lead | 72h of metrics/logs/traces from all high/critical services with no ingest gaps. |
+| 3 | Dashboard parity and alert comparison report. | Metrics Lead | 95% critical dashboards reproduced and Datadog alert evaluation matches for 7 days. |
+| 4 | Cardinality budget report. | Platform Lead | Excess custom metric series reduced from ~440K to <66K without breaking critical panels. |
+| 5 | Log replay benchmark report. | Logs Lead | Top 5 incident queries meet p99 thresholds and S3 retrieval completes under 5 minutes. |
+| 6 | Synthetic payment incident triage record. | SRE Lead | On-call follows Grafana trace to logs to metrics and reaches first hypothesis under target. |
+| 7 | Alert suppression replay report. | Incident Response Lead | 0 critical pages suppressed and alert storm pages reduced by >=70%. |
+| 8 | Rollback drill and training sign-off. | EM | PagerDuty rollback completes under 30 minutes and on-call ACK remains under 2 minutes. |

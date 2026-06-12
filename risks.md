@@ -20,3 +20,14 @@ Risks are ranked from the lab inputs rather than generic observability concerns.
 | Telemetry loss | Migration touches all 10 services and 4 backing stores from `inputs/services.json`. | Weeks 2–7 dual-run and no-blackout guarantee. |
 | OSS burden | Cost model explicitly adds **$7,500/month** backend compute/storage plus **$2,490/month** reserve. | Assign platform owners and observability-platform SLOs. |
 | Contract timing | The design depends on reducing Splunk/Datadog spend within six months. | Week 1 procurement calendar gate with 120/100/90-day reminders. |
+
+## Early warning indicators
+
+| Risk area | Leading indicator | Threshold | Action |
+|---|---|---|---|
+| Log tier regression | Top incident-query p99 latency. | >3s for 1h window or >10s for 7d window. | Keep Splunk read-only/primary for affected services and reduce hot retention/index width before cut-over. |
+| Alert safety | Critical alerts that would be suppressed in shadow mode. | Any critical page suppressed. | Disable suppression; run grouping-only until service-owner replay passes. |
+| Telemetry loss | OTel dropped spans/logs/metrics or queue age. | Dropped telemetry >0 for 5 minutes or queue age >30 seconds. | Scale collectors, enable backpressure, and fail affected exporters back to Datadog/Splunk. |
+| OSS burden | Observability platform SLO burn. | Grafana, VictoriaMetrics, Loki, Tempo, or ClickHouse below 99.5% availability in migration month. | Spend reserve on managed fallback or reduce migration scope for that signal. |
+| Contract timing | Days until Splunk non-renewal notice deadline. | 120 days, 100 days, 90 days. | Escalate to EM + Procurement and freeze reductions until exit path is confirmed. |
+| Audit rejection | Security/audit cannot reproduce a required 30-day report. | Any required report missing fields or taking >1 business day. | Keep Splunk for audit path while S3/ClickHouse export format is corrected. |

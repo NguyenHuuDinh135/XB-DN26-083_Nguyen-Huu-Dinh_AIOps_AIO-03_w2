@@ -9,13 +9,15 @@
 This package contains the required Week 2 AIOps lab submission artifacts. Start here, then read the artifacts in this order:
 
 1. `architecture-target.png` / `architecture-target.drawio` — target-state architecture and signal flow.
-2. `cost-model.md` — why the plan reaches the required 40% spend reduction.
+2. `diagram-review.md` — explicit A1 coverage checklist for the diagram.
 3. `components.md` — component decisions and six-month change risks.
-4. `adr/` — the two hardest architecture decisions and their consequences.
-5. `migration-plan.md` — eight-week migration with rollback and go/no-go gates.
-6. `risks.md` — six highest risks, owners, and mitigations.
-7. `FINDINGS.md` — required reflection plus the A7 POC validation plan.
-8. `optional-bonus.md` — optional capacity, vendor exit, skills-gap, and DR analysis.
+4. `decision-analysis.md` — alternatives considered across SaaS, OSS, hybrid, and custom AIOps paths.
+5. `cost-model.md` — why the plan reaches the required 40% spend reduction.
+6. `adr/` — the two hardest architecture decisions and their consequences.
+7. `migration-plan.md` — eight-week migration with rollback and go/no-go gates.
+8. `risks.md` — six highest risks, owners, and mitigations.
+9. `FINDINGS.md` — required reflection plus the A7 POC validation plan.
+10. `optional-bonus.md` — optional capacity, vendor exit, skills-gap, and DR analysis.
 
 Supporting material is organized separately:
 
@@ -36,12 +38,12 @@ The design keeps PagerDuty as the paging surface, moves ingestion to OpenTelemet
 
 | Rubric item | Artifact | Status |
 |---|---|---|
-| A1 architecture diagram | `architecture-target.png`, `architecture-target.drawio` | Complete: signal paths, retention tiers, alert/correlation surface, human query surfaces, and SaaS/OSS/in-house boundaries are shown. |
-| A2 component decisions | `components.md` | Complete: all required capabilities have a chosen component, why it was chosen, and what worsens if changed later. |
-| A3 cost model | `cost-model.md` | Complete: target is **$20,930/month**, **50.2%** below baseline, with unit drivers, public pricing evidence, and 2x-growth sensitivity. |
-| A4 ADRs | `adr/adr-001-tiered-log-storage.md`, `adr/adr-002-otel-correlation-pagerduty.md` | Complete: both ADRs cover hard choices, rejected alternatives, consequences, and validation gates. |
-| A5 migration plan | `migration-plan.md` | Complete: eight weeks, rollback per cut-over, no-blackout guarantee, go/no-go gates. |
-| A6 risk register | `risks.md` | Complete: six risks with likelihood, impact, mitigation, and owner. |
-| A7 POC plan | `FINDINGS.md` | Complete: uncertain component, first assumption, measurements, pass/fail threshold. |
-| Reflection | `FINDINGS.md` | Complete: all five questions reference concrete numbers and design choices. |
-| Optional bonus | `optional-bonus.md` | Added: capacity model, vendor exit clauses, skills-gap plan, and DR posture. |
+| A1 architecture diagram | `architecture-target.png`, `architecture-target.drawio`, `diagram-review.md` | Complete + evidence: signal paths, retention tiers, alert/correlation surface, human query surfaces, SaaS/OSS/in-house boundaries, and arrow semantics are mapped. |
+| A2 component decisions | `components.md`, `decision-analysis.md` | Complete + alternatives: every capability has a selected component, six-month reversal cost, and rejected options across SaaS/OSS/hybrid choices. |
+| A3 cost model | `cost-model.md` | Complete + spot-check support: target is **$20,930/month**, **50.2%** below baseline, with unit drivers, public pricing evidence, and 2x-growth sensitivity. |
+| A4 ADRs | `adr/adr-001-tiered-log-storage.md`, `adr/adr-002-otel-correlation-pagerduty.md` | Complete + strong alternatives: both ADRs cover hard choices, 5+ alternatives, consequences, and validation gates. |
+| A5 migration plan | `migration-plan.md` | Complete + evidence artifacts: eight weeks, rollback per cut-over, no-blackout guarantee, go/no-go gates, and reviewable gate artifacts. |
+| A6 risk register | `risks.md` | Complete + leading indicators: six risks with likelihood, impact, mitigation, owner, trigger thresholds, and actions. |
+| A7 POC plan | `FINDINGS.md` | Complete + consistent cost target: uncertain component, first assumption, measurements, pass/fail threshold, and $4,500 log-platform budget. |
+| Reflection | `FINDINGS.md` | Complete: all five questions reference concrete numbers, design choices, and real-world patterns. |
+| Optional bonus | `optional-bonus.md` | Added + mapped: capacity model, vendor exit clauses, skills-gap plan, and DR posture. |

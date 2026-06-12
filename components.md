@@ -29,6 +29,17 @@ Current pain points are not basic observability gaps; the team already has decen
 | Tempo | Tempo documentation describes service graph views and metrics generated from traces; Grafana can use Tempo data for trace/log/metric correlation. | Supports the design claim that traces help reduce first-hypothesis time. |
 | Grafana Cloud | Grafana Cloud Pro is paid usage-based; Enterprise has annual spend commitments. | Supports modeling Grafana as a paid primary UI rather than a free replacement. |
 
+## Alternatives reviewed but not selected
+
+| Capability | Alternatives reviewed | Why the selected component remains stronger for this lab |
+|---|---|---|
+| Metrics | Vanilla Prometheus, Mimir, Datadog metrics, New Relic / Dynatrace consolidation | VictoriaMetrics gives a lower-operational-weight path than Mimir for this scale, keeps PromQL compatibility, and removes Datadog host pricing without replacing one SaaS bill with another. |
+| Logs | Splunk discount, Datadog Logs, OpenSearch-only, Elastic Cloud, ClickHouse-only, S3-only archive | Loki + ClickHouse + S3 is the best balance: hot operational search, SQL/audit analytics, and cheap cold retention. The rejected options either miss the cost target, weaken incident response, or over-index everything. |
+| Tracing | Jaeger, Datadog APM, Honeycomb, SkyWalking | Tempo is selected because Grafana is the target human surface and service-graph correlation matters more than introducing another SaaS UI. |
+| Alerting / correlation | PagerDuty Event Orchestration only, Grafana OnCall, Coroot, custom LLM-first AIOps | Deterministic Alertmanager + topology grouping is safer for the first migration; PagerDuty receives fewer, better incidents without replacing the paging system. |
+| Dashboards / SLO | Self-host Grafana, Datadog dashboards, vendor all-in-one dashboards | Grafana Cloud reduces self-hosting burden while still consolidating the on-call starting point across metrics/logs/traces. |
+| Incident knowledge | Postgres-only, ticket comments only, Splunk saved searches | OpenSearch keeps incident retrieval queryable by service/action/root-cause over 90 days without requiring Splunk as the long-term incident memory. |
+
 ## Mapping to pain points
 
 - Pain #1 and #6: log search latency / hot-tier rotation → hot/cold log tiering with benchmarked query SLOs.

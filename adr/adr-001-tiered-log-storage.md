@@ -21,6 +21,10 @@ Move application logs to an OpenTelemetry/Filelog pipeline with Loki (day-to-day
 1. **Keep Splunk Cloud and only negotiate discount.** Rejected because it may reduce price but does not fix index-rotation failures, query-model fragmentation, or vendor renewal risk.
 2. **Move all logs to Datadog Logs.** Rejected because Datadog is already a major host-priced cost center and would preserve the SaaS concentration/lock-in problem.
 3. **Store only cold logs in S3 and remove hot search.** Rejected because it would satisfy cost reduction but damage incident response and fail the “no capability loss” constraint.
+4. **Use OpenSearch as the only log backend.** Rejected because full-text indexing all 52GB/day risks recreating the same cost/cluster-scaling problem under a different tool.
+5. **Move to Elastic Cloud.** Rejected because it lowers migration risk but keeps a managed-search pricing model that is less likely to hit the 40% reduction target with audit retention intact.
+6. **Use ClickHouse only for all logs.** Rejected because ClickHouse is strong for structured SQL analytics, but Loki is better suited for day-to-day operational log tailing and Grafana log drilldown.
+7. **Use managed Loki / Grafana Cloud Logs for all logs.** Rejected for v1 because it improves operational burden but weakens the cost-control story compared with the hybrid hot/analytics/cold split.
 
 ## Consequences
 

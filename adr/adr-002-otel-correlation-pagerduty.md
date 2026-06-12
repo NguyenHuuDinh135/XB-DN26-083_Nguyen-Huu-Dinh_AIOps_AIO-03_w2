@@ -21,6 +21,10 @@ Make OpenTelemetry the common ingest layer for metrics, logs, and traces. Add to
 1. **Replace PagerDuty entirely.** Rejected because paging schedules, escalation policies, and team trust are operationally sensitive; changing them during telemetry migration creates unnecessary blast radius.
 2. **Keep Datadog as the full single pane.** Rejected because it does not meet the 40% cost constraint and keeps host-priced APM/metrics as the dominant model.
 3. **Build a custom AIOps/LLM correlation engine first.** Rejected because the first value is deterministic fingerprinting, service graph grouping, and incident retrieval; LLM features can support decisions later but should not be the first dependency.
+4. **Use PagerDuty Event Orchestration only.** Rejected because it can improve routing, but it does not solve upstream signal fragmentation, trace sampling gaps, or Grafana-first triage.
+5. **Move paging to Grafana OnCall.** Rejected because the team would be changing paging trust, schedules, escalation policy, and telemetry stack at the same time.
+6. **Adopt Coroot as the full RCA layer.** Rejected as the core v1 dependency because it introduces a new opinionated workflow; it remains useful as a reference or later POC.
+7. **Move to Honeycomb-style SaaS observability.** Rejected because high-cardinality debugging is attractive, but the lab’s largest constraint is cutting current SaaS spend while preserving PagerDuty maturity.
 
 ## Consequences
 

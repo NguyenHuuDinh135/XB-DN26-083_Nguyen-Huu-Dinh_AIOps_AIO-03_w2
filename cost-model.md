@@ -17,7 +17,7 @@ Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 | PagerDuty pricing page | Incident Management Business plan is published as a per-user plan; public pricing summaries list Business at about **$41/user/month annual** and **$49/user/month monthly**. | <https://www.pagerduty.com/pricing/incident-management/> | Current invoice at $60/user/month is plausible with add-ons/legacy terms; target reduces seats rather than replacing the tool. |
 | Grafana Cloud pricing page | Grafana Cloud Pro starts **from $19/month + usage**; Enterprise starts at **$25,000/year commit**. Grafana Cloud invoice docs show visualization/user add-ons can be charged per monthly active user. | <https://grafana.com/pricing/> and <https://grafana.com/docs/grafana-cloud/cost-management-and-billing/manage-invoices/understand-your-invoice/contract-pricing-terms/> | Supports the target assumption that Grafana becomes a paid primary UI, not a free dashboard. |
 | AWS Price List API for Amazon S3 us-east-1 | SKU `WP9ANXZGBYYSGJEA`, S3 Standard `TimedStorage-ByteHrs`: **$0.023/GB-month for first 50TB**, then $0.022/GB-month for next 450TB. | <https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json> | Supports cold archive/object-storage portion of the OSS backend estimate. |
-| ClickHouse Cloud pricing page | Production tier starts at **$0.54/hour per replica** (~$389/month per replica) for dedicated compute; Development tier **$0.25/hour** (~$180/month). Storage: **$0.044/GB-month**. | <https://clickhouse.com/pricing> | Supports the ~$3,000/month log tier estimate: 2 production replicas = ~$778/month compute + ~44TB storage ≈ $1,936/month ≈ $2,700/month for ClickHouse portion of log analytics. |
+| ClickHouse Cloud pricing page | Production tier starts at **$0.54/hour per replica** (~$389/month per replica) for dedicated compute; Development tier **$0.25/hour** (~$180/month). Storage: **$0.044/GB-month**. | <https://clickhouse.com/pricing> | Supports the ClickHouse analytics portion of the **$4,500/month** log-platform budget: 2 production replicas = ~$778/month compute + ~44TB storage ≈ $1,936/month ≈ $2,700/month with margin. |
 
 ## Internal evidence from lab inputs
 
@@ -33,7 +33,7 @@ Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 | Datadog infrastructure metrics | $5,400 | $0 | $18/host/month | 300 hosts → VictoriaMetrics (PromAgent remote-write) | Host-based infra metrics replaced by OSS/hybrid metrics backend. |
 | Datadog custom metrics overage | $2,200 | $300 | active-series overage | ~440K excess series → governed label budget + 85% reduction | Cardinality policy processor blocks `customer_id`-style explosions. |
 | Datadog indexed logs | $1,800 | $0 | indexed events | ~1.05B events/month → routed through OTel/Filelog | Hot indexed logs consolidate into target log tier. |
-| Splunk Cloud log storage/search | $13,900 | $4,500 | GB/day indexed + workload | 52GB/day, 30d retention → 7d Loki hot + ClickHouse analytics + S3 cold archive (1yr) | Biggest cost lever (~68% reduction on logs). This row is the **additive target log-platform budget**, not a subset of another row: ~$2,700 ClickHouse analytics/search, ~$1,200 Loki hot operational logs, ~$300 S3 cold archive, ~$300 queue/export/egress margin. |
+| Splunk Cloud log storage/search | $13,900 | $4,500 | GB/day indexed + workload | 52GB/day, 30d retention → 7d Loki hot + ClickHouse analytics + S3 cold archive (1yr) | Biggest cost lever (~68% reduction on logs). This row is the separate **additive target log-platform budget**: ~$2,700 ClickHouse analytics/search, ~$1,200 Loki hot operational logs, ~$300 S3 cold archive, ~$300 queue/export/egress margin. |
 | PagerDuty Business | $3,900 | $2,700 | $60/user/month | 65 users → 45 active responders after schedule cleanup | Keep paging surface, reduce seats and incident volume after correlation. |
 | Grafana Cloud Pro | $1,050 | $2,500 | active users / managed stack | 18 users → primary query/SLO surface | Cost rises because Grafana becomes the main operational UI. |
 | Statuspage | $290 | $290 | tiered subscription | unchanged | Customer-facing comms remain unchanged. |
@@ -42,6 +42,16 @@ Modeled reduction: **$21,070/month saved = 50.2% reduction**.
 | Non-log observability backend compute/storage | $0 | $7,500 | compute, disks, object storage, ops overhead | VictoriaMetrics, Tempo, OpenSearch, HA collectors, platform SLO monitoring | OSS is not free. This row intentionally excludes the $4,500 log-platform row above to avoid double counting. Sub-allocation: ~$3,500 metrics tier (VictoriaMetrics), ~$1,800 tracing tier (Tempo), ~$1,000 incident index/search (OpenSearch), ~$1,200 OTel collector HA, platform monitoring, backups, and ops overhead. |
 | Operational reserve / burst buffer | $0 | $2,490 | contingency buffer | temporary dual-run, ingest spikes, short vendor overlap | Prevents hidden transition and growth cost from invalidating the model. This is a reserve line, not an already-committed platform component. |
 | **Total** | **$42,000** | **$20,930** |  |  | **50.2% reduction** (target ≤ $25,200 required threshold) |
+
+## Reviewer spot-check rows
+
+| Row likely to be checked | Public/list-price anchor | Why the row is defensible |
+|---|---|---|
+| Datadog APM hosts | Datadog APM billing is per underlying APM host; the input invoice uses **$40/host/month** for 295 host equivalents. | The target removes this line only after OTel + Tempo dual-run validates trace coverage. |
+| Datadog infrastructure metrics | Datadog Infrastructure Pro list pricing supports roughly **$18/host/month** on-demand. | The target removes host pricing by moving metrics to Prometheus-compatible ingestion and VictoriaMetrics. |
+| PagerDuty Business | Public pricing is per user/plan; the current input uses **65 users at $60/user/month**. | The target keeps PagerDuty but reduces active responders to 45 after upstream deduplication and schedule cleanup. |
+| Grafana Cloud Pro | Grafana Cloud is paid usage-based; Enterprise plans have annual commitments. | The target raises Grafana spend because it becomes the primary operator UI, not a read-only mirror. |
+| ClickHouse + S3 log tier | ClickHouse production compute and storage plus S3 object storage support a low-thousands monthly log analytics/archive estimate. | The model budgets **$4,500/month** for the whole additive log platform, leaving room for Loki hot logs, ClickHouse analytics, S3 archive, queue/export, and egress margin. |
 
 ## Sensitivity: data volume grows 2x faster than projected
 

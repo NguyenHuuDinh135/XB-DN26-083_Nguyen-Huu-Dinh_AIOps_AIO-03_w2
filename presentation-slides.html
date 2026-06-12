@@ -219,15 +219,15 @@
       <table>
         <thead><tr><th>Line Item</th><th>Current</th><th>Target</th><th>Unit Driver</th><th>Assumption / Rationale</th></tr></thead>
         <tbody>
-          <tr><td>Datadog APM hosts</td><td>$11,800</td><td>$0</td><td>$42/host/tháng (list)</td><td>Thay bằng OTel + Tempo; list price: datadoghq.com/pricing (APM-HOST-PRO on-demand $42)</td></tr>
+          <tr><td>Datadog APM hosts</td><td>$11,800</td><td>$0</td><td>$40/host/tháng</td><td>Thay bằng OTel + Tempo; current invoice uses 295 host equivalents</td></tr>
           <tr><td>Datadog infra metrics</td><td>$5,400</td><td>$0</td><td>$18/host/tháng (list)</td><td>Prometheus/VM; list price: datadoghq.com/pricing (HOSTS-PRO on-demand $18)</td></tr>
           <tr><td>Datadog custom metrics overage</td><td>$2,200</td><td>$300</td><td>active-series overage</td><td>Cardinality budget + giảm 85% qua policy processor</td></tr>
           <tr><td>Datadog indexed logs</td><td>$1,800</td><td>$0</td><td>indexed events/tháng</td><td>Route qua OTel → tiered log store</td></tr>
-          <tr><td>Splunk Cloud log storage</td><td>$13,900</td><td>$0 (→ OSS backend)</td><td>GB/ngày indexed</td><td>52→7 GB/ngày hot; log cost included in OSS backend below</td></tr>
+          <tr><td>Splunk Cloud log storage</td><td>$13,900</td><td>$4,500</td><td>GB/ngày indexed</td><td>Additive log-platform budget: Loki hot ops + ClickHouse analytics + S3 cold archive</td></tr>
           <tr><td>PagerDuty Business</td><td>$3,900</td><td>$2,700</td><td>$49–60/user/tháng</td><td>65→45 seats; list price: pagerduty.com/pricing (Business $41–49/user/tháng)</td></tr>
           <tr><td>Grafana Cloud Pro</td><td>$1,050</td><td>$2,500</td><td>$8–55/active user/tháng</td><td>Primary query surface; list price: grafana.com/pricing ($8 base, $55 Enterprise plugins)</td></tr>
-          <tr><td>Statuspage + Synthetics + Khác</td><td>$1,650</td><td>$940</td><td>—</td><td>Giữ critical checks; low-value chuyển sang OSS</td></tr>
-          <tr><td>OSS backend compute/storage (MỚI)</td><td>$0</td><td>$7,500</td><td>VM, disks, S3, ops</td><td>~$3K log tier (Loki+ClickHouse+S3), ~$2.5K metrics (VictoriaMetrics), ~$1.2K tracing (Tempo), ~$0.8K incident index (OpenSearch)</td></tr>
+          <tr><td>Statuspage + Synthetics + tracing add-on</td><td>$1,950</td><td>$940</td><td>—</td><td>Giữ critical checks; tracing premium replaced by Tempo</td></tr>
+          <tr><td>Non-log OSS backend compute/storage (MỚI)</td><td>$0</td><td>$7,500</td><td>VM, disks, ops</td><td>Excludes log-platform row above: ~$3.5K metrics, ~$1.8K tracing, ~$1K incident index, ~$1.2K OTel HA/backups/platform SLOs</td></tr>
           <tr><td>Operational reserve</td><td>$0</td><td>$2,490</td><td>contingency buffer</td><td>Dual-run, volume spikes, migration overhead</td></tr>
           <tr style="font-weight: 600; color: var(--accent);"><td>TỔNG</td><td>$42,000</td><td>$20,930</td><td colspan="3">Giảm 50.2% · Target ≤ $25,200 threshold</td></tr>
         </tbody>
@@ -404,7 +404,7 @@
       <ul style="color: var(--muted); line-height: 1.8; margin: 0.5rem 0 0 1.25rem;">
         <li>Tăng hot retention budget hoặc dùng managed Loki/Grafana Cloud Logs</li>
         <li>Giữ Splunk cho audit-only traffic trong khi migrate hot logs</li>
-        <li>Adjust cost model: allocate thêm budget cho log tier từ reserve</li>
+        <li>Adjust cost model: protect the $4.5K additive log-platform budget and reduce hot retention/index width</li>
       </ul>
       <p style="color: var(--muted); margin-top: 0.5rem;">Đây là <strong>single highest-leverage spike</strong> vì nó validate cost assumption lớn nhất TRƯỚC mọi production cut-over.</p>
     </div>
