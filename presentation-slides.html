@@ -132,7 +132,7 @@
         </div>
       </div>
       <div class="diagram-frame">
-        <img src="current-observability-architecture.svg" alt="Kiến trúc hiện tại">
+        <img src="current-observability-architecture.png" alt="Kiến trúc hiện tại">
       </div>
     </div>
   </div>
@@ -181,7 +181,7 @@
   <header><h2 class="slide-header">Kiến trúc mục tiêu — $20,930/Tháng (giảm 50.2%)</h2><p class="slide-subtitle">OpenTelemetry-first · Tiered retention · Topology-aware correlation · Single query surface</p></header>
   <div class="slide-content">
     <div class="diagram-frame" style="max-height: 75vh;">
-      <img src="target-observability-aiops-architecture.svg" alt="Kiến trúc mục tiêu">
+      <img src="architecture-target.png" alt="Kiến trúc mục tiêu">
     </div>
     <div class="grid-3" style="margin-top: 1rem;">
       <div class="card"><h3>📥 Ingest</h3><p>OTel Collector + Policy Processor (sampling, PII, cardinality)</p></div>
@@ -419,7 +419,7 @@
       <table>
         <thead><tr><th>Item</th><th>Weight</th><th>Artifact</th><th>Evidence</th></tr></thead>
         <tbody>
-          <tr><td>A1 Architecture Diagram</td><td>10</td><td>target-observability-aiops-architecture.drawio + .svg</td><td>✅ Tất cả signal paths, human surfaces, SaaS/OSS boundaries, color-coded zones</td></tr>
+          <tr><td>A1 Architecture Diagram</td><td>10</td><td>architecture-target.drawio + .png</td><td>✅ Tất cả signal paths, human surfaces, SaaS/OSS boundaries, color-coded zones</td></tr>
           <tr><td>A2 Component Decision Table</td><td>15</td><td>components.md</td><td>✅ 6 capabilities, why + 6-month risk mỗi cái</td></tr>
           <tr><td>A3 Cost Model</td><td>20</td><td>cost-model.md</td><td>✅ $42K→$20.9K (50.2%), sensitivity, public pricing citations (DD, PD, Grafana, AWS)</td></tr>
           <tr><td>A4 Two ADRs</td><td>20</td><td>adr/adr-001-*.md, adr/adr-002-*.md</td><td>✅ Hard decisions (tiered logs, OTel+PD), ≥2 alternatives, honest consequences</td></tr>

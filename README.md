@@ -21,7 +21,7 @@ This package contains the required Week 2 AIOps lab submission artifacts. Start 
 
 Supporting material is organized separately:
 
-- `diagrams/` — source/current-state diagrams and rendered PNG exports.
+
 - `inputs/` — original lab input data used as evidence.
 - `assets/icons/` — local vendor/tool icons used while designing diagrams; the submitted Draw.io files also embed the icons so they render without external paths.
 
